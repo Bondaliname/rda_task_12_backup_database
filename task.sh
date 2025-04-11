@@ -1,17 +1,25 @@
 #! /bin/bash
 
-echo "Creating full backup of ShopDB..."
-mysqldump -u "$DB_USER" -p"$DB_PASSWORD" ShopDB > ShopDB_full_backup.sql
+mysqldump -u"$DB_USER" -p"$DB_PASSWORD" ShopDB --result-file=ShopDB_full_backup.sql
+ if [ $? -ne 0 ]; then
+   echo "Backup failed!"
+   exit 1
+ fi
 
-echo "Restoring full backup of ShopDB..."
-mysql -u "$DB_USER" -p"$DB_PASSWORD" -e "CREATE DATABASE IF NOT EXISTS ShopDBReserve;"
 mysql -u "$DB_USER" -p"$DB_PASSWORD" ShopDBReserve < ShopDB_full_backup.sql
+ if [ $? -ne 0 ]; then
+   echo "Restore failed"
+   exit 1
+ fi
 
-echo "Creating data-only backup of ShopDB..."
-mysqldump -u "$DB_USER" -p"$DB_PASSWORD" --no-create-info ShopDB > ShopDB_data_backup.sql
-
-echo "Restoring data-only backup to ShopDBDevelopment..."
-mysql -u "$DB_USER" -p"$DB_PASSWORD" -e "CREATE DATABASE IF NOT EXISTS ShopDBDevelopment;"
-mysql -u "$DB_USER" -p"$DB_PASSWORD" ShopDBDevelopment < ShopDB_data_backup.sql
-
-echo "Backup and restoration completed successfully."
+ mysqldump -u"$DB_USER" -p"$DB_PASSWORD" --no-create-info ShopDB --result-file=data_backup.sql
+ if [ $? -ne 0 ]; then
+   echo "Backup failed!"
+   exit 1
+ fi
+ 
+ mysql -u"$DB_USER" -p"$DB_PASSWORD" ShopDBDevelopment < data_backup.sql
+ if [ $? -ne 0 ]; then
+   echo "Restore failed!"
+   exit 1
+ fi
